@@ -9,3 +9,5 @@ class InventoryLimitExceededException : HttpException(HttpStatus.BAD_REQUEST, "I
 class WalletLimitExceededException : HttpException(HttpStatus.BAD_REQUEST, "Wallet Limit exceeded")
 
 class PlatformFeeLessThanZeroException : Exception("Platform fee cannot be less than zero")
+
+class STTFeeLessThanZeroException : Exception("STT fee cannot be less than zero")
