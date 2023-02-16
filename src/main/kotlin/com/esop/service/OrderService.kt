@@ -1,7 +1,7 @@
 package com.esop.service
 
 
-import com.esop.constant.errors
+import com.esop.errors
 import com.esop.repository.UserRecords
 import com.esop.schema.*
 import com.esop.schema.PlatformFee.Companion.addPlatformFee
@@ -37,10 +37,14 @@ class OrderService(private val userRecords: UserRecords) {
         var platformFee = 0L
 
 
-        if (sellerOrder.esopType == "NON_PERFORMANCE")
+        if (sellerOrder.esopType == "NON_PERFORMANCE") {
             platformFee = round(sellAmount * TWO_PERCENT).toLong()
+        }
 
-        updateWalletBalances(sellAmount, platformFee, buyer, seller)
+        val securityTransactionFee =
+            STTFeeCalculator().calculate(sellAmount, sellerOrder.esopType, currentTradeQuantity)
+
+        updateWalletBalances(sellAmount, platformFee, securityTransactionFee, buyer, seller)
 
 
         seller.transferLockedESOPsTo(buyer, EsopTransferRequest(sellerOrder.esopType, currentTradeQuantity))
@@ -53,12 +57,13 @@ class OrderService(private val userRecords: UserRecords) {
     private fun updateWalletBalances(
         sellAmount: Long,
         platformFee: Long,
+        securityTransactionFee: Long,
         buyer: User,
         seller: User
     ) {
-        val adjustedSellAmount = sellAmount - platformFee
+        val adjustedSellAmount = sellAmount - platformFee - securityTransactionFee
         addPlatformFee(platformFee)
-
+        STTFee.addSTTFee(securityTransactionFee)
         buyer.userWallet.removeMoneyFromLockedState(sellAmount)
         seller.userWallet.addMoneyToWallet(adjustedSellAmount)
     }
